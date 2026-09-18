@@ -8,23 +8,32 @@ A modern, premium streaming platform built with Next.js.
 
 - Next.js 16 (App Router) + TypeScript
 - Tailwind CSS with custom SUBFLIX brand theme
-- Polished cinematic landing / home page
-- Reusable movie, series, genre & continue-watching components
-- PostgreSQL + Drizzle ORM schema foundation
-- **Full session-based authentication** (register, login, logout)
-- Secure password hashing (bcrypt)
-- Database-backed sessions (HTTP-only cookies)
+- PostgreSQL + Drizzle ORM
+- Full session-based authentication (register, login, logout)
+- Secure password hashing (bcrypt) + database-backed sessions
 - Role support (user / admin)
-- Default user profile on registration
-- Production-ready project structure
 
-## Phase 2 — Catalog + Admin CMS (In Progress)
+## Phase 2 — Movie & Series Catalog ✅
 
-Schema enhancements completed:
-- `sessions` table
-- `video_url`, `is_featured`, `is_trending` on movies/series
-- Unique constraints on season/episode numbers
-- Migration: `0001_phase1_auth_and_catalog_fields`
+Database-backed browsable catalog:
+
+- **Movies** `/movies` — published movie grid
+- **Series** `/series` — published series grid
+- **Movie detail** `/movies/[slug]` — metadata, genres, trailer, related
+- **Series detail** `/series/[slug]` — seasons, episodes, metadata
+- **Genres** `/genres` and `/genres/[slug]`
+- **Search** `/search` — title/description search via PostgreSQL
+- **Home** — trending, featured, new releases, genres from DB
+- Only **published** content is public
+- Empty / error / 404 states
+- Reusable catalog components and data access layer (`src/lib/catalog.ts`)
+
+### Discovery approach (Phase 2)
+
+- **Trending / Featured**: `is_trending` / `is_featured` flags
+- **New Releases**: ordered by `release_year` then `created_at`
+- **Related**: same genre(s) as current movie
+- **Popular**: deferred to analytics phase (no fake metrics)
 
 ## Brand
 
@@ -35,47 +44,20 @@ Schema enhancements completed:
 
 ## Getting Started
 
-### 1. Install dependencies
-
 ```bash
 npm install
-```
-
-### 2. Environment
-
-```bash
 cp .env.example .env.local
-```
-
-Edit `.env.local` and set at least:
-
-```
-DATABASE_URL=postgresql://user:password@localhost:5432/subflix
-```
-
-### 3. Database
-
-```bash
-npm run db:generate   # if needed
+# set DATABASE_URL
 npm run db:migrate
-```
-
-### 4. Run development server
-
-```bash
 npm run dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
 - `npm run dev` — development server
 - `npm run build` — production build
 - `npm run lint` — ESLint
-- `npm run db:generate` — generate Drizzle migrations
-- `npm run db:migrate` — apply migrations
-- `npm run db:studio` — open Drizzle Studio
+- `npm run db:generate` / `db:migrate` / `db:studio`
 
 ## License
 

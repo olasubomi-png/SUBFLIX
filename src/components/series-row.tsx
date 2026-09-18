@@ -1,19 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { MovieCard } from "@/components/movie-card";
-import type { CatalogMovie } from "@/lib/catalog";
+import { SeriesCard } from "@/components/series-card";
+import type { CatalogSeries } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 
-interface MovieRowProps {
+interface SeriesRowProps {
   title: string;
-  movies: CatalogMovie[];
+  seriesList: CatalogSeries[];
   seeAllHref?: string;
   className?: string;
 }
 
-export function MovieRow({ title, movies, seeAllHref, className }: MovieRowProps) {
-  if (!movies.length) return null;
+export function SeriesRow({
+  title,
+  seriesList,
+  seeAllHref,
+  className,
+}: SeriesRowProps) {
+  if (!seriesList.length) return null;
 
   return (
     <section className={cn("space-y-4", className)}>
@@ -33,12 +38,12 @@ export function MovieRow({ title, movies, seeAllHref, className }: MovieRowProps
 
       <div className="relative">
         <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pb-2 sm:gap-4 sm:px-6 lg:px-8">
-          {movies.map((movie, idx) => (
+          {seriesList.map((item, idx) => (
             <div
-              key={movie.id}
+              key={item.id}
               className="w-[140px] flex-shrink-0 sm:w-[160px] md:w-[180px] lg:w-[200px]"
             >
-              <MovieCard movie={movie} priority={idx < 4} />
+              <SeriesCard series={item} priority={idx < 4} />
             </div>
           ))}
         </div>

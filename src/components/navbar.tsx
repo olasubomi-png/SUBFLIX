@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/movies", label: "Movies" },
   { href: "/series", label: "Series" },
+  { href: "/genres", label: "Genres" },
 ];
 
 export function Navbar() {
@@ -19,7 +20,6 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full">
       <div className="glass border-b border-white/5">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-900/30">
               <span className="text-lg font-black text-white">S</span>
@@ -32,7 +32,6 @@ export function Navbar() {
             </span>
           </Link>
 
-          {/* Desktop Nav */}
           <nav className="hidden items-center gap-1 md:flex">
             {navLinks.map((link) => (
               <Link
@@ -45,10 +44,11 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* Desktop Actions */}
           <div className="hidden items-center gap-2 md:flex">
-            <Button variant="ghost" size="icon" aria-label="Search">
-              <Search className="h-5 w-5" />
+            <Button variant="ghost" size="icon" aria-label="Search" asChild>
+              <Link href="/search">
+                <Search className="h-5 w-5" />
+              </Link>
             </Button>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/login">Login</Link>
@@ -58,7 +58,6 @@ export function Navbar() {
             </Button>
           </div>
 
-          {/* Mobile menu button */}
           <button
             className="flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10 md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -69,7 +68,6 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
       <div
         className={cn(
           "absolute left-0 right-0 top-16 border-b border-white/5 bg-midnight/95 backdrop-blur-xl transition-all duration-300 md:hidden",
