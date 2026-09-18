@@ -1,5 +1,5 @@
 import { listAdminPeople } from "@/lib/admin-data";
-import { createPersonAction } from "@/app/actions/admin";
+import { createPersonFormAction } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Field, TextArea } from "@/components/admin/form-fields";
 import { PersonRow } from "./person-row";
@@ -18,15 +18,22 @@ export default async function AdminPeoplePage() {
         {list.map((p) => (
           <PersonRow key={p.id} person={p} />
         ))}
-        {list.length === 0 && <p className="py-8 text-center text-muted">No people yet.</p>}
+        {list.length === 0 && (
+          <p className="py-8 text-center text-muted">No people yet.</p>
+        )}
       </ul>
-      <form action={createPersonAction} className="space-y-3 rounded-xl border border-white/10 bg-card p-6">
+      <form
+        action={createPersonFormAction}
+        className="space-y-3 rounded-xl border border-white/10 bg-card p-6"
+      >
         <h2 className="font-semibold text-white">Add person</h2>
         <Field label="Name" name="name" required />
         <Field label="Slug (optional)" name="slug" />
         <Field label="Photo URL" name="photoUrl" />
         <TextArea label="Biography" name="biography" rows={3} />
-        <Button type="submit" size="sm">Create person</Button>
+        <Button type="submit" size="sm">
+          Create person
+        </Button>
       </form>
     </div>
   );

@@ -6,7 +6,7 @@ import {
   listAdminCategories,
   listAdminPeople,
 } from "@/lib/admin-data";
-import { updateMovieAction, addMovieCastAction, removeMovieCastAction } from "@/app/actions/admin";
+import { updateMovieAction } from "@/app/actions/admin";
 import { MovieEditForm } from "./movie-edit-form";
 
 export const dynamic = "force-dynamic";

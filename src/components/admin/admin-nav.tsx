@@ -13,13 +13,14 @@ import {
   ExternalLink,
   Menu,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 
-const links = [
+const links: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/movies", label: "Movies", icon: Film },
   { href: "/admin/series", label: "Series", icon: Tv },
@@ -29,11 +30,14 @@ const links = [
   { href: "/admin/users", label: "Users", icon: Users },
 ];
 
-export function AdminNav({ userEmail }: { userEmail: string }) {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-
-  const NavLinks = ({ onClick }: { onClick?: () => void }) => (
+function NavLinks({
+  pathname,
+  onClick,
+}: {
+  pathname: string;
+  onClick?: () => void;
+}) {
+  return (
     <>
       {links.map((link) => {
         const active =
@@ -60,10 +64,14 @@ export function AdminNav({ userEmail }: { userEmail: string }) {
       })}
     </>
   );
+}
+
+export function AdminNav({ userEmail }: { userEmail: string }) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
   return (
     <>
-      {/* Desktop sidebar */}
       <aside className="hidden w-60 flex-shrink-0 flex-col border-r border-white/5 bg-card/50 lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-white/5 px-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 text-sm font-black text-white">
@@ -77,7 +85,7 @@ export function AdminNav({ userEmail }: { userEmail: string }) {
           </div>
         </div>
         <nav className="flex flex-1 flex-col gap-1 p-3">
-          <NavLinks />
+          <NavLinks pathname={pathname} />
         </nav>
         <div className="space-y-2 border-t border-white/5 p-3">
           <Link
@@ -96,7 +104,6 @@ export function AdminNav({ userEmail }: { userEmail: string }) {
         </div>
       </aside>
 
-      {/* Mobile top bar */}
       <div className="flex h-14 items-center justify-between border-b border-white/5 bg-card/80 px-4 lg:hidden">
         <span className="font-bold text-white">SUBFLIX Admin</span>
         <button
@@ -111,7 +118,7 @@ export function AdminNav({ userEmail }: { userEmail: string }) {
       {open && (
         <div className="border-b border-white/5 bg-card p-3 lg:hidden">
           <nav className="flex flex-col gap-1">
-            <NavLinks onClick={() => setOpen(false)} />
+            <NavLinks pathname={pathname} onClick={() => setOpen(false)} />
           </nav>
           <form action={logoutAction} className="mt-3">
             <Button type="submit" variant="secondary" size="sm" className="w-full">

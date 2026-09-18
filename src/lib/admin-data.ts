@@ -9,8 +9,6 @@ import {
   categories,
   people,
   users,
-  profiles,
-  subscriptions,
   movieGenres,
   seriesGenres,
   movieCategories,

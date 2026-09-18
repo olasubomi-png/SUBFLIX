@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminSeriesById, listAdminSeasons } from "@/lib/admin-data";
-import { createSeasonAction } from "@/app/actions/admin";
+import { createSeasonFormAction } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Field, TextArea } from "@/components/admin/form-fields";
 import { SeasonRow } from "./season-row";
@@ -15,7 +15,7 @@ export default async function AdminSeasonsPage({ params }: Props) {
   const seriesItem = await getAdminSeriesById(id).catch(() => null);
   if (!seriesItem) notFound();
   const seasonsList = await listAdminSeasons(id);
-  const create = createSeasonAction.bind(null, id);
+  const create = createSeasonFormAction.bind(null, id);
 
   return (
     <div className="space-y-6">

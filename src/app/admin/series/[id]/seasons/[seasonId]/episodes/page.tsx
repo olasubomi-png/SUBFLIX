@@ -5,7 +5,7 @@ import {
   getSeasonById,
   listAdminEpisodes,
 } from "@/lib/admin-data";
-import { createEpisodeAction } from "@/app/actions/admin";
+import { createEpisodeFormAction } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Field, TextArea, Checkbox } from "@/components/admin/form-fields";
 import { EpisodeRow } from "./episode-row";
@@ -21,7 +21,7 @@ export default async function AdminEpisodesPage({ params }: Props) {
   const season = await getSeasonById(seasonId);
   if (!season || season.seriesId !== id) notFound();
   const eps = await listAdminEpisodes(seasonId);
-  const create = createEpisodeAction.bind(null, id, seasonId);
+  const create = createEpisodeFormAction.bind(null, id, seasonId);
 
   return (
     <div className="space-y-6">

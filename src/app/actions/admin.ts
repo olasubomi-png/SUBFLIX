@@ -1041,3 +1041,34 @@ export async function removeSeriesCastAction(
   revalidatePath(`/admin/series/${seriesId}/edit`);
   return { success: true };
 }
+
+// ======================
+// Form action wrappers (FormData-only, void return for native <form action>)
+// ======================
+
+export async function createGenreFormAction(formData: FormData): Promise<void> {
+  await createGenreAction(formData);
+}
+
+export async function createCategoryFormAction(formData: FormData): Promise<void> {
+  await createCategoryAction(formData);
+}
+
+export async function createPersonFormAction(formData: FormData): Promise<void> {
+  await createPersonAction(formData);
+}
+
+export async function createSeasonFormAction(
+  seriesId: string,
+  formData: FormData
+): Promise<void> {
+  await createSeasonAction(seriesId, formData);
+}
+
+export async function createEpisodeFormAction(
+  seriesId: string,
+  seasonId: string,
+  formData: FormData
+): Promise<void> {
+  await createEpisodeAction(seriesId, seasonId, formData);
+}

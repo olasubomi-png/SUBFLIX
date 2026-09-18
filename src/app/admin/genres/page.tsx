@@ -1,9 +1,5 @@
 import { listAdminGenres } from "@/lib/admin-data";
-import {
-  createGenreAction,
-  updateGenreAction,
-  deleteGenreAction,
-} from "@/app/actions/admin";
+import { createGenreFormAction } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Field, TextArea } from "@/components/admin/form-fields";
 import { GenreRow } from "./genre-row";
@@ -32,7 +28,7 @@ export default async function AdminGenresPage() {
       </ul>
 
       <form
-        action={createGenreAction}
+        action={createGenreFormAction}
         className="space-y-3 rounded-xl border border-white/10 bg-card p-6"
       >
         <h2 className="font-semibold text-white">Add genre</h2>
