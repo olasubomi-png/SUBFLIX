@@ -4,17 +4,27 @@
 
 A modern, premium streaming platform built with Next.js.
 
-## Phase 1 — Foundation (Current)
-
-This repository currently contains the Phase 1 foundation:
+## Phase 1 — Foundation + Authentication ✅
 
 - Next.js 16 (App Router) + TypeScript
 - Tailwind CSS with custom SUBFLIX brand theme
 - Polished cinematic landing / home page
 - Reusable movie, series, genre & continue-watching components
 - PostgreSQL + Drizzle ORM schema foundation
-- Auth architecture placeholders
+- **Full session-based authentication** (register, login, logout)
+- Secure password hashing (bcrypt)
+- Database-backed sessions (HTTP-only cookies)
+- Role support (user / admin)
+- Default user profile on registration
 - Production-ready project structure
+
+## Phase 2 — Catalog + Admin CMS (In Progress)
+
+Schema enhancements completed:
+- `sessions` table
+- `video_url`, `is_featured`, `is_trending` on movies/series
+- Unique constraints on season/episode numbers
+- Migration: `0001_phase1_auth_and_catalog_fields`
 
 ## Brand
 
@@ -43,13 +53,10 @@ Edit `.env.local` and set at least:
 DATABASE_URL=postgresql://user:password@localhost:5432/subflix
 ```
 
-### 3. Database (optional for UI only)
+### 3. Database
 
 ```bash
-# Generate migrations
-npm run db:generate
-
-# Apply migrations (requires running Postgres)
+npm run db:generate   # if needed
 npm run db:migrate
 ```
 
@@ -60,35 +67,6 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
-
-## Project Structure
-
-```
-src/
-├── app/                 # App Router pages
-├── auth/                # Auth foundation (next phase)
-├── components/          # UI components
-│   ├── ui/              # shadcn-style primitives
-│   ├── hero.tsx
-│   ├── navbar.tsx
-│   ├── movie-card.tsx
-│   └── ...
-├── data/                # Mock data (Phase 1)
-├── db/                  # Drizzle schema & client
-└── lib/                 # Utilities
-```
-
-## Roadmap Overview
-
-| Phase | Focus                        | Status      |
-|-------|------------------------------|-------------|
-| 1     | Foundation + Landing         | ✅ Done     |
-| 2     | Movies & Series Catalog      | Planned     |
-| 3     | Admin CMS                    | Planned     |
-| 4     | Video Streaming Engine       | Planned     |
-| 5     | Offline Downloads            | Planned     |
-| 6     | Subscriptions + Paystack     | Planned     |
-| 7+    | Personalization, Mobile, etc.| Future      |
 
 ## Scripts
 

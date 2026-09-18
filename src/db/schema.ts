@@ -8,6 +8,7 @@ import {
   real,
   primaryKey,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -45,11 +46,30 @@ export const profiles = pgTable("profiles", {
   name: text("name").notNull(),
   avatarUrl: text("avatar_url"),
   isKids: boolean("is_kids").notNull().default(false),
-  pin: text("pin"), // hashed if set
+  pin: text("pin"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("sessions_user_idx").on(table.userId),
+    index("sessions_token_idx").on(table.token),
+  ]
+);
 
 // ======================
 // CONTENT
@@ -73,14 +93,17 @@ export const movies = pgTable(
     slug: text("slug").notNull().unique(),
     description: text("description"),
     releaseYear: integer("release_year"),
-    runtime: integer("runtime"), // minutes
+    runtime: integer("runtime"),
     ageRating: text("age_rating"),
     language: text("language").default("en"),
     posterUrl: text("poster_url"),
     backdropUrl: text("backdrop_url"),
     trailerUrl: text("trailer_url"),
+    videoUrl: text("video_url"),
     rating: real("rating").default(0),
     isPublished: boolean("is_published").notNull().default(false),
+    isFeatured: boolean("is_featured").notNull().default(false),
+    isTrending: boolean("is_trending").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -91,6 +114,8 @@ export const movies = pgTable(
   (table) => [
     index("movies_slug_idx").on(table.slug),
     index("movies_published_idx").on(table.isPublished),
+    index("movies_featured_idx").on(table.isFeatured),
+    index("movies_trending_idx").on(table.isTrending),
   ]
 );
 
@@ -109,6 +134,8 @@ export const series = pgTable(
     trailerUrl: text("trailer_url"),
     rating: real("rating").default(0),
     isPublished: boolean("is_published").notNull().default(false),
+    isFeatured: boolean("is_featured").notNull().default(false),
+    isTrending: boolean("is_trending").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -119,22 +146,36 @@ export const series = pgTable(
   (table) => [
     index("series_slug_idx").on(table.slug),
     index("series_published_idx").on(table.isPublished),
+    index("series_featured_idx").on(table.isFeatured),
+    index("series_trending_idx").on(table.isTrending),
   ]
 );
 
-export const seasons = pgTable("seasons", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  seriesId: uuid("series_id")
-    .notNull()
-    .references(() => series.id, { onDelete: "cascade" }),
-  seasonNumber: integer("season_number").notNull(),
-  title: text("title"),
-  description: text("description"),
-  posterUrl: text("poster_url"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const seasons = pgTable(
+  "seasons",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    seriesId: uuid("series_id")
+      .notNull()
+      .references(() => series.id, { onDelete: "cascade" }),
+    seasonNumber: integer("season_number").notNull(),
+    title: text("title"),
+    description: text("description"),
+    posterUrl: text("poster_url"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("seasons_series_number_idx").on(
+      table.seriesId,
+      table.seasonNumber
+    ),
+  ]
+);
 
 export const episodes = pgTable(
   "episodes",
@@ -148,16 +189,25 @@ export const episodes = pgTable(
     description: text("description"),
     runtime: integer("runtime"),
     thumbnailUrl: text("thumbnail_url"),
-    videoUrl: text("video_url"), // will be signed later
+    videoUrl: text("video_url"),
     isPublished: boolean("is_published").notNull().default(false),
+    releaseDate: timestamp("release_date", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [index("episodes_season_idx").on(table.seasonId)]
+  (table) => [
+    index("episodes_season_idx").on(table.seasonId),
+    uniqueIndex("episodes_season_number_idx").on(
+      table.seasonId,
+      table.episodeNumber
+    ),
+  ]
 );
 
-// Many-to-many: movies <-> genres
 export const movieGenres = pgTable(
   "movie_genres",
   {
@@ -171,7 +221,6 @@ export const movieGenres = pgTable(
   (table) => [primaryKey({ columns: [table.movieId, table.genreId] })]
 );
 
-// Many-to-many: series <-> genres
 export const seriesGenres = pgTable(
   "series_genres",
   {
@@ -272,11 +321,12 @@ export const subscriptions = pgTable("subscriptions", {
 });
 
 // ======================
-// RELATIONS (for Drizzle query API)
+// RELATIONS
 // ======================
 
 export const usersRelations = relations(users, ({ many }) => ({
   profiles: many(profiles),
+  sessions: many(sessions),
   watchHistory: many(watchHistory),
   watchlist: many(watchlist),
   subscriptions: many(subscriptions),
@@ -285,6 +335,13 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const profilesRelations = relations(profiles, ({ one }) => ({
   user: one(users, {
     fields: [profiles.userId],
+    references: [users.id],
+  }),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
     references: [users.id],
   }),
 }));
@@ -304,4 +361,38 @@ export const seasonsRelations = relations(seasons, ({ one, many }) => ({
     references: [series.id],
   }),
   episodes: many(episodes),
+}));
+
+export const episodesRelations = relations(episodes, ({ one }) => ({
+  season: one(seasons, {
+    fields: [episodes.seasonId],
+    references: [seasons.id],
+  }),
+}));
+
+export const movieGenresRelations = relations(movieGenres, ({ one }) => ({
+  movie: one(movies, {
+    fields: [movieGenres.movieId],
+    references: [movies.id],
+  }),
+  genre: one(genres, {
+    fields: [movieGenres.genreId],
+    references: [genres.id],
+  }),
+}));
+
+export const seriesGenresRelations = relations(seriesGenres, ({ one }) => ({
+  series: one(series, {
+    fields: [seriesGenres.seriesId],
+    references: [series.id],
+  }),
+  genre: one(genres, {
+    fields: [seriesGenres.genreId],
+    references: [genres.id],
+  }),
+}));
+
+export const genresRelations = relations(genres, ({ many }) => ({
+  movies: many(movieGenres),
+  series: many(seriesGenres),
 }));
