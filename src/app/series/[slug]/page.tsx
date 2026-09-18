@@ -123,6 +123,29 @@ export default async function SeriesDetailPage({ params }: Props) {
               </div>
             )}
 
+            {item.categories && item.categories.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-2 md:justify-start">
+                {item.categories.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/categories/${c.slug}`}
+                    className="rounded-full border border-violet-500/30 bg-violet-600/10 px-3 py-1 text-xs font-medium text-violet-200 transition-colors hover:bg-violet-600/30"
+                  >
+                    {c.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {item.directors && item.directors.length > 0 && (
+              <p className="text-sm text-muted">
+                <span className="text-gray-400">
+                  Director{item.directors.length > 1 ? "s" : ""}:{" "}
+                </span>
+                {item.directors.map((d) => d.name).join(", ")}
+              </p>
+            )}
+
             {item.description && (
               <p className="max-w-2xl text-sm leading-relaxed text-gray-300 sm:text-base">
                 {item.description}
@@ -144,6 +167,44 @@ export default async function SeriesDetailPage({ params }: Props) {
             )}
           </div>
         </div>
+
+        {item.cast && item.cast.length > 0 && (
+          <section className="mt-14 space-y-4">
+            <h2 className="text-xl font-bold text-white sm:text-2xl">Cast</h2>
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+              {item.cast.map((person) => (
+                <div
+                  key={`${person.id}-${person.characterName ?? ""}`}
+                  className="w-28 flex-shrink-0 text-center sm:w-32"
+                >
+                  <div className="relative mx-auto mb-2 h-28 w-28 overflow-hidden rounded-full bg-card-hover sm:h-32 sm:w-32">
+                    {person.photoUrl ? (
+                      <Image
+                        src={person.photoUrl}
+                        alt={person.name}
+                        fill
+                        className="object-cover"
+                        sizes="128px"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-2xl font-bold text-muted">
+                        {person.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <p className="line-clamp-1 text-sm font-medium text-white">
+                    {person.name}
+                  </p>
+                  {person.characterName && (
+                    <p className="line-clamp-1 text-xs text-muted">
+                      {person.characterName}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Seasons & Episodes */}
         {item.seasons.length > 0 ? (

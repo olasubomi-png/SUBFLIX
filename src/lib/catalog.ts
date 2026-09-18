@@ -8,11 +8,28 @@ import {
   seriesGenres,
   seasons,
   episodes,
+  categories,
+  movieCategories,
+  seriesCategories,
+  people,
+  movieCast,
+  seriesCast,
+  movieDirectors,
+  seriesDirectors,
 } from "@/db/schema";
 
 // ======================
 // Types (DB-backed)
 // ======================
+
+export type CatalogPersonCredit = {
+  id: string;
+  name: string;
+  slug: string;
+  photoUrl: string | null;
+  characterName?: string | null;
+  castOrder?: number;
+};
 
 export type CatalogMovie = {
   id: string;
@@ -34,6 +51,9 @@ export type CatalogMovie = {
   createdAt: Date;
   updatedAt: Date;
   genres?: { id: string; name: string; slug: string }[];
+  categories?: { id: string; name: string; slug: string }[];
+  cast?: CatalogPersonCredit[];
+  directors?: CatalogPersonCredit[];
 };
 
 export type CatalogSeries = {
@@ -54,7 +74,19 @@ export type CatalogSeries = {
   createdAt: Date;
   updatedAt: Date;
   genres?: { id: string; name: string; slug: string }[];
+  categories?: { id: string; name: string; slug: string }[];
+  cast?: CatalogPersonCredit[];
+  directors?: CatalogPersonCredit[];
   seasonsCount?: number;
+};
+
+export type CatalogCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type CatalogGenre = {
@@ -145,17 +177,54 @@ export async function getMovieBySlug(
   if (rows.length === 0) return null;
 
   const movie = rows[0] as CatalogMovie;
-  const genreRows = await database
-    .select({
-      id: genres.id,
-      name: genres.name,
-      slug: genres.slug,
-    })
-    .from(movieGenres)
-    .innerJoin(genres, eq(movieGenres.genreId, genres.id))
-    .where(eq(movieGenres.movieId, movie.id));
+  const [genreRows, categoryRows, castRows, directorRows] = await Promise.all([
+    database
+      .select({
+        id: genres.id,
+        name: genres.name,
+        slug: genres.slug,
+      })
+      .from(movieGenres)
+      .innerJoin(genres, eq(movieGenres.genreId, genres.id))
+      .where(eq(movieGenres.movieId, movie.id)),
+    database
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+      })
+      .from(movieCategories)
+      .innerJoin(categories, eq(movieCategories.categoryId, categories.id))
+      .where(eq(movieCategories.movieId, movie.id)),
+    database
+      .select({
+        id: people.id,
+        name: people.name,
+        slug: people.slug,
+        photoUrl: people.photoUrl,
+        characterName: movieCast.characterName,
+        castOrder: movieCast.castOrder,
+      })
+      .from(movieCast)
+      .innerJoin(people, eq(movieCast.personId, people.id))
+      .where(eq(movieCast.movieId, movie.id))
+      .orderBy(asc(movieCast.castOrder)),
+    database
+      .select({
+        id: people.id,
+        name: people.name,
+        slug: people.slug,
+        photoUrl: people.photoUrl,
+      })
+      .from(movieDirectors)
+      .innerJoin(people, eq(movieDirectors.personId, people.id))
+      .where(eq(movieDirectors.movieId, movie.id)),
+  ]);
 
   movie.genres = genreRows;
+  movie.categories = categoryRows;
+  movie.cast = castRows;
+  movie.directors = directorRows;
   return movie;
 }
 
@@ -251,17 +320,54 @@ export async function getSeriesBySlug(
 
   const seriesItem = rows[0] as CatalogSeries;
 
-  const genreRows = await database
-    .select({
-      id: genres.id,
-      name: genres.name,
-      slug: genres.slug,
-    })
-    .from(seriesGenres)
-    .innerJoin(genres, eq(seriesGenres.genreId, genres.id))
-    .where(eq(seriesGenres.seriesId, seriesItem.id));
+  const [genreRows, categoryRows, castRows, directorRows] = await Promise.all([
+    database
+      .select({
+        id: genres.id,
+        name: genres.name,
+        slug: genres.slug,
+      })
+      .from(seriesGenres)
+      .innerJoin(genres, eq(seriesGenres.genreId, genres.id))
+      .where(eq(seriesGenres.seriesId, seriesItem.id)),
+    database
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+      })
+      .from(seriesCategories)
+      .innerJoin(categories, eq(seriesCategories.categoryId, categories.id))
+      .where(eq(seriesCategories.seriesId, seriesItem.id)),
+    database
+      .select({
+        id: people.id,
+        name: people.name,
+        slug: people.slug,
+        photoUrl: people.photoUrl,
+        characterName: seriesCast.characterName,
+        castOrder: seriesCast.castOrder,
+      })
+      .from(seriesCast)
+      .innerJoin(people, eq(seriesCast.personId, people.id))
+      .where(eq(seriesCast.seriesId, seriesItem.id))
+      .orderBy(asc(seriesCast.castOrder)),
+    database
+      .select({
+        id: people.id,
+        name: people.name,
+        slug: people.slug,
+        photoUrl: people.photoUrl,
+      })
+      .from(seriesDirectors)
+      .innerJoin(people, eq(seriesDirectors.personId, people.id))
+      .where(eq(seriesDirectors.seriesId, seriesItem.id)),
+  ]);
 
   seriesItem.genres = genreRows;
+  seriesItem.categories = categoryRows;
+  seriesItem.cast = castRows;
+  seriesItem.directors = directorRows;
 
   const seasonRows = await database
     .select()
@@ -384,7 +490,8 @@ export async function searchCatalog(query: string, limit = 30): Promise<{
 
   const pattern = `%${q}%`;
 
-  const movieRows = await database
+  // Movies matching title/description OR linked to a matching genre name
+  const movieByText = await database
     .select()
     .from(movies)
     .where(
@@ -396,7 +503,35 @@ export async function searchCatalog(query: string, limit = 30): Promise<{
     .orderBy(desc(movies.createdAt))
     .limit(limit);
 
-  const seriesRows = await database
+  const movieByGenre = await database
+    .select({
+      id: movies.id,
+      title: movies.title,
+      slug: movies.slug,
+      description: movies.description,
+      releaseYear: movies.releaseYear,
+      runtime: movies.runtime,
+      ageRating: movies.ageRating,
+      language: movies.language,
+      posterUrl: movies.posterUrl,
+      backdropUrl: movies.backdropUrl,
+      trailerUrl: movies.trailerUrl,
+      videoUrl: movies.videoUrl,
+      rating: movies.rating,
+      isPublished: movies.isPublished,
+      isFeatured: movies.isFeatured,
+      isTrending: movies.isTrending,
+      createdAt: movies.createdAt,
+      updatedAt: movies.updatedAt,
+    })
+    .from(movieGenres)
+    .innerJoin(movies, eq(movieGenres.movieId, movies.id))
+    .innerJoin(genres, eq(movieGenres.genreId, genres.id))
+    .where(and(eq(movies.isPublished, true), ilike(genres.name, pattern)))
+    .orderBy(desc(movies.createdAt))
+    .limit(limit);
+
+  const seriesByText = await database
     .select()
     .from(series)
     .where(
@@ -408,9 +543,44 @@ export async function searchCatalog(query: string, limit = 30): Promise<{
     .orderBy(desc(series.createdAt))
     .limit(limit);
 
+  const seriesByGenre = await database
+    .select({
+      id: series.id,
+      title: series.title,
+      slug: series.slug,
+      description: series.description,
+      releaseYear: series.releaseYear,
+      ageRating: series.ageRating,
+      language: series.language,
+      posterUrl: series.posterUrl,
+      backdropUrl: series.backdropUrl,
+      trailerUrl: series.trailerUrl,
+      rating: series.rating,
+      isPublished: series.isPublished,
+      isFeatured: series.isFeatured,
+      isTrending: series.isTrending,
+      createdAt: series.createdAt,
+      updatedAt: series.updatedAt,
+    })
+    .from(seriesGenres)
+    .innerJoin(series, eq(seriesGenres.seriesId, series.id))
+    .innerJoin(genres, eq(seriesGenres.genreId, genres.id))
+    .where(and(eq(series.isPublished, true), ilike(genres.name, pattern)))
+    .orderBy(desc(series.createdAt))
+    .limit(limit);
+
+  const movieMap = new Map<string, CatalogMovie>();
+  for (const m of [...movieByText, ...movieByGenre] as CatalogMovie[]) {
+    movieMap.set(m.id, m);
+  }
+  const seriesMap = new Map<string, CatalogSeries>();
+  for (const s of [...seriesByText, ...seriesByGenre] as CatalogSeries[]) {
+    seriesMap.set(s.id, s);
+  }
+
   return {
-    movies: movieRows as CatalogMovie[],
-    series: seriesRows as CatalogSeries[],
+    movies: Array.from(movieMap.values()).slice(0, limit),
+    series: Array.from(seriesMap.values()).slice(0, limit),
   };
 }
 
@@ -517,4 +687,126 @@ export async function getCatalogStats(): Promise<{
     series: s?.count ?? 0,
     genres: g?.count ?? 0,
   };
+}
+
+
+// ======================
+// Categories
+// ======================
+
+export async function getAllCategories(): Promise<CatalogCategory[]> {
+  if (!isDbAvailable()) return [];
+  const database = ensureDb();
+  const rows = await database
+    .select()
+    .from(categories)
+    .orderBy(asc(categories.name));
+  return rows as CatalogCategory[];
+}
+
+export async function getCategoryBySlug(
+  slug: string
+): Promise<CatalogCategory | null> {
+  if (!isDbAvailable()) return null;
+  const database = ensureDb();
+  const rows = await database
+    .select()
+    .from(categories)
+    .where(eq(categories.slug, slug))
+    .limit(1);
+  return rows.length > 0 ? (rows[0] as CatalogCategory) : null;
+}
+
+export async function getMoviesByCategorySlug(
+  categorySlug: string,
+  limit = 50
+): Promise<CatalogMovie[]> {
+  if (!isDbAvailable()) return [];
+  const database = ensureDb();
+  const cat = await database
+    .select()
+    .from(categories)
+    .where(eq(categories.slug, categorySlug))
+    .limit(1);
+  if (cat.length === 0) return [];
+
+  const rows = await database
+    .select({
+      id: movies.id,
+      title: movies.title,
+      slug: movies.slug,
+      description: movies.description,
+      releaseYear: movies.releaseYear,
+      runtime: movies.runtime,
+      ageRating: movies.ageRating,
+      language: movies.language,
+      posterUrl: movies.posterUrl,
+      backdropUrl: movies.backdropUrl,
+      trailerUrl: movies.trailerUrl,
+      videoUrl: movies.videoUrl,
+      rating: movies.rating,
+      isPublished: movies.isPublished,
+      isFeatured: movies.isFeatured,
+      isTrending: movies.isTrending,
+      createdAt: movies.createdAt,
+      updatedAt: movies.updatedAt,
+    })
+    .from(movieCategories)
+    .innerJoin(movies, eq(movieCategories.movieId, movies.id))
+    .where(
+      and(
+        eq(movieCategories.categoryId, cat[0].id),
+        eq(movies.isPublished, true)
+      )
+    )
+    .orderBy(desc(movies.createdAt))
+    .limit(limit);
+
+  return rows as CatalogMovie[];
+}
+
+export async function getSeriesByCategorySlug(
+  categorySlug: string,
+  limit = 50
+): Promise<CatalogSeries[]> {
+  if (!isDbAvailable()) return [];
+  const database = ensureDb();
+  const cat = await database
+    .select()
+    .from(categories)
+    .where(eq(categories.slug, categorySlug))
+    .limit(1);
+  if (cat.length === 0) return [];
+
+  const rows = await database
+    .select({
+      id: series.id,
+      title: series.title,
+      slug: series.slug,
+      description: series.description,
+      releaseYear: series.releaseYear,
+      ageRating: series.ageRating,
+      language: series.language,
+      posterUrl: series.posterUrl,
+      backdropUrl: series.backdropUrl,
+      trailerUrl: series.trailerUrl,
+      rating: series.rating,
+      isPublished: series.isPublished,
+      isFeatured: series.isFeatured,
+      isTrending: series.isTrending,
+      createdAt: series.createdAt,
+      updatedAt: series.updatedAt,
+    })
+    .from(seriesCategories)
+    .innerJoin(series, eq(seriesCategories.seriesId, series.id))
+    .where(
+      and(
+        eq(seriesCategories.categoryId, cat[0].id),
+        eq(series.isPublished, true)
+      )
+    )
+    .orderBy(desc(series.createdAt))
+    .limit(limit);
+
+  return rows as CatalogSeries[];
 }

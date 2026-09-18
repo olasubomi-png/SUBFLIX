@@ -320,6 +320,136 @@ export const subscriptions = pgTable("subscriptions", {
     .defaultNow(),
 });
 
+
+// ======================
+// CATEGORIES
+// ======================
+
+export const categories = pgTable("categories", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const movieCategories = pgTable(
+  "movie_categories",
+  {
+    movieId: uuid("movie_id")
+      .notNull()
+      .references(() => movies.id, { onDelete: "cascade" }),
+    categoryId: uuid("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.movieId, table.categoryId] })]
+);
+
+export const seriesCategories = pgTable(
+  "series_categories",
+  {
+    seriesId: uuid("series_id")
+      .notNull()
+      .references(() => series.id, { onDelete: "cascade" }),
+    categoryId: uuid("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.seriesId, table.categoryId] })]
+);
+
+// ======================
+// PEOPLE / CAST / DIRECTORS
+// ======================
+
+export const people = pgTable(
+  "people",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+    photoUrl: text("photo_url"),
+    biography: text("biography"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("people_name_idx").on(table.name)]
+);
+
+export const movieCast = pgTable(
+  "movie_cast",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    movieId: uuid("movie_id")
+      .notNull()
+      .references(() => movies.id, { onDelete: "cascade" }),
+    personId: uuid("person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "cascade" }),
+    characterName: text("character_name"),
+    castOrder: integer("cast_order").notNull().default(0),
+  },
+  (table) => [
+    index("movie_cast_movie_idx").on(table.movieId),
+    index("movie_cast_person_idx").on(table.personId),
+  ]
+);
+
+export const seriesCast = pgTable(
+  "series_cast",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    seriesId: uuid("series_id")
+      .notNull()
+      .references(() => series.id, { onDelete: "cascade" }),
+    personId: uuid("person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "cascade" }),
+    characterName: text("character_name"),
+    castOrder: integer("cast_order").notNull().default(0),
+  },
+  (table) => [
+    index("series_cast_series_idx").on(table.seriesId),
+    index("series_cast_person_idx").on(table.personId),
+  ]
+);
+
+export const movieDirectors = pgTable(
+  "movie_directors",
+  {
+    movieId: uuid("movie_id")
+      .notNull()
+      .references(() => movies.id, { onDelete: "cascade" }),
+    personId: uuid("person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.movieId, table.personId] })]
+);
+
+export const seriesDirectors = pgTable(
+  "series_directors",
+  {
+    seriesId: uuid("series_id")
+      .notNull()
+      .references(() => series.id, { onDelete: "cascade" }),
+    personId: uuid("person_id")
+      .notNull()
+      .references(() => people.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.seriesId, table.personId] })]
+);
+
 // ======================
 // RELATIONS
 // ======================
@@ -348,11 +478,17 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
 
 export const moviesRelations = relations(movies, ({ many }) => ({
   genres: many(movieGenres),
+  categories: many(movieCategories),
+  cast: many(movieCast),
+  directors: many(movieDirectors),
 }));
 
 export const seriesRelations = relations(series, ({ many }) => ({
   seasons: many(seasons),
   genres: many(seriesGenres),
+  categories: many(seriesCategories),
+  cast: many(seriesCast),
+  directors: many(seriesDirectors),
 }));
 
 export const seasonsRelations = relations(seasons, ({ one, many }) => ({
@@ -396,3 +532,82 @@ export const genresRelations = relations(genres, ({ many }) => ({
   movies: many(movieGenres),
   series: many(seriesGenres),
 }));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  movies: many(movieCategories),
+  series: many(seriesCategories),
+}));
+
+export const movieCategoriesRelations = relations(movieCategories, ({ one }) => ({
+  movie: one(movies, {
+    fields: [movieCategories.movieId],
+    references: [movies.id],
+  }),
+  category: one(categories, {
+    fields: [movieCategories.categoryId],
+    references: [categories.id],
+  }),
+}));
+
+export const seriesCategoriesRelations = relations(seriesCategories, ({ one }) => ({
+  series: one(series, {
+    fields: [seriesCategories.seriesId],
+    references: [series.id],
+  }),
+  category: one(categories, {
+    fields: [seriesCategories.categoryId],
+    references: [categories.id],
+  }),
+}));
+
+export const peopleRelations = relations(people, ({ many }) => ({
+  movieCast: many(movieCast),
+  seriesCast: many(seriesCast),
+  movieDirectors: many(movieDirectors),
+  seriesDirectors: many(seriesDirectors),
+}));
+
+export const movieCastRelations = relations(movieCast, ({ one }) => ({
+  movie: one(movies, {
+    fields: [movieCast.movieId],
+    references: [movies.id],
+  }),
+  person: one(people, {
+    fields: [movieCast.personId],
+    references: [people.id],
+  }),
+}));
+
+export const seriesCastRelations = relations(seriesCast, ({ one }) => ({
+  series: one(series, {
+    fields: [seriesCast.seriesId],
+    references: [series.id],
+  }),
+  person: one(people, {
+    fields: [seriesCast.personId],
+    references: [people.id],
+  }),
+}));
+
+export const movieDirectorsRelations = relations(movieDirectors, ({ one }) => ({
+  movie: one(movies, {
+    fields: [movieDirectors.movieId],
+    references: [movies.id],
+  }),
+  person: one(people, {
+    fields: [movieDirectors.personId],
+    references: [people.id],
+  }),
+}));
+
+export const seriesDirectorsRelations = relations(seriesDirectors, ({ one }) => ({
+  series: one(series, {
+    fields: [seriesDirectors.seriesId],
+    references: [series.id],
+  }),
+  person: one(people, {
+    fields: [seriesDirectors.personId],
+    references: [people.id],
+  }),
+}));
+

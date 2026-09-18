@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/movies", label: "Movies" },
   { href: "/series", label: "Series" },
   { href: "/genres", label: "Genres" },
+  { href: "/categories", label: "Categories" },
 ];
 
 export function Navbar() {

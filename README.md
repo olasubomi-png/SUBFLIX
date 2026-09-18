@@ -19,10 +19,12 @@ Database-backed browsable catalog:
 
 - **Movies** `/movies` — published movie grid
 - **Series** `/series` — published series grid
-- **Movie detail** `/movies/[slug]` — metadata, genres, trailer, related
-- **Series detail** `/series/[slug]` — seasons, episodes, metadata
+- **Movie detail** `/movies/[slug]` — metadata, genres, categories, cast, directors, trailer, related
+- **Series detail** `/series/[slug]` — seasons, episodes, cast, directors, categories
 - **Genres** `/genres` and `/genres/[slug]`
-- **Search** `/search` — title/description search via PostgreSQL
+- **Categories** `/categories` and `/categories/[slug]`
+- **Search** `/search` — title, description, and genre name via PostgreSQL
+- **People / cast / directors** schema (public display; CMS in Phase 3)
 - **Home** — trending, featured, new releases, genres from DB
 - Only **published** content is public
 - Empty / error / 404 states
