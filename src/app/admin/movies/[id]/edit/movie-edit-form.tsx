@@ -163,6 +163,15 @@ export function MovieEditForm({
               className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
             />
           </div>
+          <div className="w-20 space-y-1">
+            <label className="text-xs text-muted">Order</label>
+            <input
+              name="castOrder"
+              type="number"
+              defaultValue={0}
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+            />
+          </div>
           <Button type="submit" size="sm">
             Add
           </Button>

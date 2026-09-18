@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { listAdminSeries } from "@/lib/admin-data";
 import { Button } from "@/components/ui/button";
-import { deleteSeriesAction, toggleSeriesFlagAction } from "@/app/actions/admin";
+import { SeriesRowActions } from "./series-row-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -63,20 +63,7 @@ export default async function AdminSeriesPage() {
                     </span>
                   </td>
                   <td className="px-3 py-3">
-                    <div className="flex justify-end gap-1">
-                      <form action={async () => { "use server"; await toggleSeriesFlagAction(s.id, "isPublished"); }}>
-                        <Button type="submit" size="sm" variant="ghost">{s.isPublished ? "Unpublish" : "Publish"}</Button>
-                      </form>
-                      <Button asChild size="sm" variant="secondary">
-                        <Link href={`/admin/series/${s.id}/seasons`}>Seasons</Link>
-                      </Button>
-                      <Button asChild size="sm" variant="secondary">
-                        <Link href={`/admin/series/${s.id}/edit`}>Edit</Link>
-                      </Button>
-                      <form action={async () => { "use server"; await deleteSeriesAction(s.id); }}>
-                        <Button type="submit" size="sm" variant="ghost" className="text-red-400">Delete</Button>
-                      </form>
-                    </div>
+                    <SeriesRowActions id={s.id} isPublished={s.isPublished} />
                   </td>
                 </tr>
               ))}

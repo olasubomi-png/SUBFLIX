@@ -2,10 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { listAdminMovies } from "@/lib/admin-data";
 import { Button } from "@/components/ui/button";
-import {
-  deleteMovieAction,
-  toggleMovieFlagAction,
-} from "@/app/actions/admin";
+import { MovieRowActions } from "./movie-row-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -99,36 +96,7 @@ export default async function AdminMoviesPage({
                     {!m.isFeatured && !m.isTrending && "—"}
                   </td>
                   <td className="px-3 py-3">
-                    <div className="flex justify-end gap-1">
-                      <form
-                        action={async () => {
-                          "use server";
-                          await toggleMovieFlagAction(m.id, "isPublished");
-                        }}
-                      >
-                        <Button type="submit" size="sm" variant="ghost">
-                          {m.isPublished ? "Unpublish" : "Publish"}
-                        </Button>
-                      </form>
-                      <Button asChild size="sm" variant="secondary">
-                        <Link href={`/admin/movies/${m.id}/edit`}>Edit</Link>
-                      </Button>
-                      <form
-                        action={async () => {
-                          "use server";
-                          await deleteMovieAction(m.id);
-                        }}
-                      >
-                        <Button
-                          type="submit"
-                          size="sm"
-                          variant="ghost"
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          Delete
-                        </Button>
-                      </form>
-                    </div>
+                    <MovieRowActions id={m.id} isPublished={m.isPublished} />
                   </td>
                 </tr>
               ))}

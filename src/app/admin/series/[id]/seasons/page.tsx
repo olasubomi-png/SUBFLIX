@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminSeriesById, listAdminSeasons } from "@/lib/admin-data";
-import { createSeasonAction, deleteSeasonAction } from "@/app/actions/admin";
+import { createSeasonAction } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Field, TextArea } from "@/components/admin/form-fields";
+import { SeasonRow } from "./season-row";
 
 export const dynamic = "force-dynamic";
 
@@ -23,28 +24,14 @@ export default async function AdminSeasonsPage({ params }: Props) {
           <h1 className="text-2xl font-bold text-white">Seasons — {seriesItem.title}</h1>
           <p className="text-sm text-muted">{seasonsList.length} seasons</p>
         </div>
-        <Link href={`/admin/series/${id}/edit`} className="text-sm text-muted hover:text-white">Back to series</Link>
+        <Link href={`/admin/series/${id}/edit`} className="text-sm text-muted hover:text-white">
+          Back to series
+        </Link>
       </div>
 
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {seasonsList.map((s) => (
-          <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-card px-4 py-3">
-            <div>
-              <p className="font-medium text-white">
-                Season {s.seasonNumber}
-                {s.title ? ` — ${s.title}` : ""}
-              </p>
-              <p className="text-xs text-muted">{s.episodesCount} episodes</p>
-            </div>
-            <div className="flex gap-2">
-              <Button asChild size="sm" variant="secondary">
-                <Link href={`/admin/series/${id}/seasons/${s.id}/episodes`}>Episodes</Link>
-              </Button>
-              <form action={async () => { "use server"; await deleteSeasonAction(id, s.id); }}>
-                <Button type="submit" size="sm" variant="ghost" className="text-red-400">Delete</Button>
-              </form>
-            </div>
-          </li>
+          <SeasonRow key={s.id} seriesId={id} season={s} />
         ))}
         {seasonsList.length === 0 && <p className="text-muted">No seasons yet.</p>}
       </ul>
@@ -56,6 +43,7 @@ export default async function AdminSeasonsPage({ params }: Props) {
           <Field label="Title" name="title" />
         </div>
         <TextArea label="Description" name="description" rows={2} />
+        <Field label="Poster URL" name="posterUrl" />
         <Button type="submit" size="sm">Create season</Button>
       </form>
     </div>

@@ -559,6 +559,98 @@ export async function deleteSeasonAction(
   return { success: true };
 }
 
+
+export async function updateSeasonAction(
+  seriesId: string,
+  seasonId: string,
+  prevOrForm: ActionResult | FormData,
+  maybeForm?: FormData
+): Promise<ActionResult> {
+  await assertAdmin();
+  const formData = prevOrForm instanceof FormData ? prevOrForm : maybeForm!;
+  const database = ensureDb();
+  const season = await database
+    .select()
+    .from(seasons)
+    .where(and(eq(seasons.id, seasonId), eq(seasons.seriesId, seriesId)))
+    .limit(1);
+  if (!season[0]) return { error: "Season not found" };
+
+  const seasonNumber = Number(formData.get("seasonNumber"));
+  if (!seasonNumber || seasonNumber < 1) return { error: "Invalid season number" };
+
+  try {
+    await database
+      .update(seasons)
+      .set({
+        seasonNumber,
+        title: emptyToNull(String(formData.get("title") ?? "")),
+        description: emptyToNull(String(formData.get("description") ?? "")),
+        posterUrl: emptyToNull(String(formData.get("posterUrl") ?? "")),
+        updatedAt: new Date(),
+      })
+      .where(eq(seasons.id, seasonId));
+    revalidatePath(`/admin/series/${seriesId}/seasons`);
+    revalidatePath(`/series`);
+    return { success: true };
+  } catch {
+    return { error: "Failed to update season (duplicate number?)" };
+  }
+}
+
+export async function updateEpisodeAction(
+  seriesId: string,
+  seasonId: string,
+  episodeId: string,
+  prevOrForm: ActionResult | FormData,
+  maybeForm?: FormData
+): Promise<ActionResult> {
+  await assertAdmin();
+  const formData = prevOrForm instanceof FormData ? prevOrForm : maybeForm!;
+  const database = ensureDb();
+  const season = await database
+    .select()
+    .from(seasons)
+    .where(and(eq(seasons.id, seasonId), eq(seasons.seriesId, seriesId)))
+    .limit(1);
+  if (!season[0]) return { error: "Season not found for this series" };
+
+  const ep = await database
+    .select()
+    .from(episodes)
+    .where(and(eq(episodes.id, episodeId), eq(episodes.seasonId, seasonId)))
+    .limit(1);
+  if (!ep[0]) return { error: "Episode not found" };
+
+  const title = String(formData.get("title") ?? "").trim();
+  const episodeNumber = Number(formData.get("episodeNumber"));
+  if (!title) return { error: "Title is required" };
+  if (!episodeNumber || episodeNumber < 1) return { error: "Invalid episode number" };
+
+  try {
+    await database
+      .update(episodes)
+      .set({
+        episodeNumber,
+        title,
+        description: emptyToNull(String(formData.get("description") ?? "")),
+        runtime: formData.get("runtime") ? Number(formData.get("runtime")) : null,
+        thumbnailUrl: emptyToNull(String(formData.get("thumbnailUrl") ?? "")),
+        videoUrl: emptyToNull(String(formData.get("videoUrl") ?? "")),
+        isPublished:
+          formData.get("isPublished") === "on" ||
+          formData.get("isPublished") === "true",
+        updatedAt: new Date(),
+      })
+      .where(eq(episodes.id, episodeId));
+    revalidatePath(`/admin/series/${seriesId}/seasons/${seasonId}/episodes`);
+    revalidatePath(`/series`);
+    return { success: true };
+  } catch {
+    return { error: "Failed to update episode (duplicate number?)" };
+  }
+}
+
 export async function createEpisodeAction(
   seriesId: string,
   seasonId: string,
@@ -860,6 +952,17 @@ export async function addMovieCastAction(
   const database = ensureDb();
   const personId = String(formData.get("personId") ?? "");
   if (!personId) return { error: "Person is required" };
+
+  const person = await database.select({ id: people.id }).from(people).where(eq(people.id, personId)).limit(1);
+  if (!person[0]) return { error: "Person not found" };
+
+  const existing = await database
+    .select({ id: movieCast.id })
+    .from(movieCast)
+    .where(and(eq(movieCast.movieId, movieId), eq(movieCast.personId, personId)))
+    .limit(1);
+  if (existing.length) return { error: "This person is already in the cast" };
+
   const characterName = emptyToNull(String(formData.get("characterName") ?? ""));
   const castOrder = formData.get("castOrder")
     ? Number(formData.get("castOrder"))
@@ -899,6 +1002,17 @@ export async function addSeriesCastAction(
   const database = ensureDb();
   const personId = String(formData.get("personId") ?? "");
   if (!personId) return { error: "Person is required" };
+
+  const person = await database.select({ id: people.id }).from(people).where(eq(people.id, personId)).limit(1);
+  if (!person[0]) return { error: "Person not found" };
+
+  const existing = await database
+    .select({ id: seriesCast.id })
+    .from(seriesCast)
+    .where(and(eq(seriesCast.seriesId, seriesId), eq(seriesCast.personId, personId)))
+    .limit(1);
+  if (existing.length) return { error: "This person is already in the cast" };
+
   try {
     await database.insert(seriesCast).values({
       seriesId,

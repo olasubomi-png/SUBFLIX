@@ -5,9 +5,10 @@ import {
   getSeasonById,
   listAdminEpisodes,
 } from "@/lib/admin-data";
-import { createEpisodeAction, deleteEpisodeAction } from "@/app/actions/admin";
+import { createEpisodeAction } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Field, TextArea, Checkbox } from "@/components/admin/form-fields";
+import { EpisodeRow } from "./episode-row";
 
 export const dynamic = "force-dynamic";
 
@@ -31,27 +32,22 @@ export default async function AdminEpisodesPage({ params }: Props) {
           </h1>
           <p className="text-sm text-muted">{eps.length} episodes</p>
         </div>
-        <Link href={`/admin/series/${id}/seasons`} className="text-sm text-muted hover:text-white">
+        <Link
+          href={`/admin/series/${id}/seasons`}
+          className="text-sm text-muted hover:text-white"
+        >
           Back to seasons
         </Link>
       </div>
 
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {eps.map((e) => (
-          <li key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-card px-4 py-3">
-            <div>
-              <p className="font-medium text-white">
-                E{e.episodeNumber}. {e.title}
-              </p>
-              <p className="text-xs text-muted">
-                {e.runtime ? `${e.runtime} min · ` : ""}
-                {e.isPublished ? "Published" : "Draft"}
-              </p>
-            </div>
-            <form action={async () => { "use server"; await deleteEpisodeAction(id, seasonId, e.id); }}>
-              <Button type="submit" size="sm" variant="ghost" className="text-red-400">Delete</Button>
-            </form>
-          </li>
+          <EpisodeRow
+            key={e.id}
+            seriesId={id}
+            seasonId={seasonId}
+            episode={e}
+          />
         ))}
         {eps.length === 0 && <p className="text-muted">No episodes yet.</p>}
       </ul>
